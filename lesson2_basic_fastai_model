@@ -1,1 +1,955 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.7.12","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"gpu","dataSources":[],"dockerImageVersionId":30185,"isInternetEnabled":true,"language":"python","sourceType":"notebook","isGpuEnabled":true}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"markdown","source":"## Saving a Cats v Dogs Model","metadata":{"id":"98d53c05"}},{"cell_type":"markdown","source":"This is a minimal example showing how to train a fastai model on Kaggle, and save it so you can use it in your app.","metadata":{}},{"cell_type":"code","source":"# Make sure we've got the latest version of fastai:\n!pip install -Uqq fastai","metadata":{"id":"evvA0fqvSblq","outputId":"ba21b811-767c-459a-ccdf-044758720a55","_kg_hide-input":true,"_kg_hide-output":true,"execution":{"iopub.status.busy":"2022-05-03T05:51:37.948558Z","iopub.execute_input":"2022-05-03T05:51:37.949032Z","iopub.status.idle":"2022-05-03T05:51:59.531217Z","shell.execute_reply.started":"2022-05-03T05:51:37.948947Z","shell.execute_reply":"2022-05-03T05:51:59.530294Z"},"trusted":true},"execution_count":null,"outputs":[]},{"cell_type":"markdown","source":"First, import all the stuff we need from fastai:","metadata":{}},{"cell_type":"code","source":"from fastai.vision.all import *","metadata":{"id":"44eb0ad3","execution":{"iopub.status.busy":"2024-07-07T19:00:53.544578Z","iopub.execute_input":"2024-07-07T19:00:53.545219Z","iopub.status.idle":"2024-07-07T19:00:56.526894Z","shell.execute_reply.started":"2024-07-07T19:00:53.545132Z","shell.execute_reply":"2024-07-07T19:00:56.526082Z"},"trusted":true},"execution_count":1,"outputs":[]},{"cell_type":"markdown","source":"Download and decompress our dataset, which is pictures of dogs and cats:","metadata":{}},{"cell_type":"code","source":"path = untar_data(URLs.PETS)/'images'","metadata":{"execution":{"iopub.status.busy":"2024-07-07T19:02:50.055481Z","iopub.execute_input":"2024-07-07T19:02:50.055796Z","iopub.status.idle":"2024-07-07T19:03:17.262807Z","shell.execute_reply.started":"2024-07-07T19:02:50.055762Z","shell.execute_reply":"2024-07-07T19:03:17.261978Z"},"trusted":true},"execution_count":2,"outputs":[{"output_type":"display_data","data":{"text/plain":"<IPython.core.display.HTML object>","text/html":"\n<style>\n    /* Turns off some styling */\n    progress {\n        /* gets rid of default border in Firefox and Opera. */\n        border: none;\n        /* Needs to be in here for Safari polyfill so background images work as expected. */\n        background-size: auto;\n    }\n    .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {\n        background: #F44336;\n    }\n</style>\n"},"metadata":{}},{"output_type":"display_data","data":{"text/plain":"<IPython.core.display.HTML object>","text/html":"\n    <div>\n      <progress value='811712512' class='' max='811706944' style='width:300px; height:20px; vertical-align: middle;'></progress>\n      100.00% [811712512/811706944 00:16<00:00]\n    </div>\n    "},"metadata":{}}]},{"cell_type":"markdown","source":"We need a way to label our images as dogs or cats. In this dataset, pictures of cats are given a filename that starts with a capital letter:","metadata":{}},{"cell_type":"code","source":"def is_cat(x): return x[0].isupper() ","metadata":{"id":"44eb0ad3","execution":{"iopub.status.busy":"2024-07-07T19:03:17.264634Z","iopub.execute_input":"2024-07-07T19:03:17.264845Z","iopub.status.idle":"2024-07-07T19:03:17.268990Z","shell.execute_reply.started":"2024-07-07T19:03:17.264818Z","shell.execute_reply":"2024-07-07T19:03:17.268146Z"},"trusted":true},"execution_count":3,"outputs":[]},{"cell_type":"markdown","source":"Now we can create our `DataLoaders`:","metadata":{}},{"cell_type":"code","source":"dls = ImageDataLoaders.from_name_func('.',\n    get_image_files(path), valid_pct=0.2, seed=42,\n    label_func=is_cat,\n    item_tfms=Resize(192))","metadata":{"id":"44eb0ad3","execution":{"iopub.status.busy":"2024-07-07T19:03:17.270209Z","iopub.execute_input":"2024-07-07T19:03:17.270493Z","iopub.status.idle":"2024-07-07T19:03:21.435189Z","shell.execute_reply.started":"2024-07-07T19:03:17.270450Z","shell.execute_reply":"2024-07-07T19:03:21.434399Z"},"trusted":true},"execution_count":4,"outputs":[]},{"cell_type":"markdown","source":"... and train our model, a resnet18 (to keep it small and fast):","metadata":{}},{"cell_type":"code","source":"learn = vision_learner(dls, resnet18, metrics=error_rate)\nlearn.fine_tune(3)","metadata":{"id":"c107f724","outputId":"fcc1de68-7c8b-43f5-b9eb-fcdb0773ef07","execution":{"iopub.status.busy":"2024-07-07T19:03:21.436957Z","iopub.execute_input":"2024-07-07T19:03:21.437180Z"},"trusted":true},"execution_count":null,"outputs":[{"name":"stderr","text":"Downloading: \"https://download.pytorch.org/models/resnet18-f37072fd.pth\" to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"  0%|          | 0.00/44.7M [00:00<?, ?B/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"44f47fbd7f0341cf98b1f618cd8a7f73"}},"metadata":{}},{"output_type":"display_data","data":{"text/plain":"<IPython.core.display.HTML object>","text/html":"\n<style>\n    /* Turns off some styling */\n    progress {\n        /* gets rid of default border in Firefox and Opera. */\n        border: none;\n        /* Needs to be in here for Safari polyfill so background images work as expected. */\n        background-size: auto;\n    }\n    .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {\n        background: #F44336;\n    }\n</style>\n"},"metadata":{}},{"output_type":"display_data","data":{"text/plain":"<IPython.core.display.HTML object>","text/html":"\n    <div>\n      <progress value='0' class='' max='1' style='width:300px; height:20px; vertical-align: middle;'></progress>\n      0.00% [0/1 00:00<00:00]\n    </div>\n    \n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: left;\">\n      <th>epoch</th>\n      <th>train_loss</th>\n      <th>valid_loss</th>\n      <th>error_rate</th>\n      <th>time</th>\n    </tr>\n  </thead>\n  <tbody>\n  </tbody>\n</table><p>\n\n    <div>\n      <progress value='89' class='' max='92' style='width:300px; height:20px; vertical-align: middle;'></progress>\n      96.74% [89/92 00:30<00:01 0.1986]\n    </div>\n    "},"metadata":{}}]},{"cell_type":"markdown","source":"Now we can export our trained `Learner`. This contains all the information needed to run the model:","metadata":{}},{"cell_type":"code","source":"learn.export('cat_dog_model.pkl')","metadata":{"id":"ae2bc6ac","trusted":true},"execution_count":null,"outputs":[]},{"cell_type":"markdown","source":"Finally, open the Kaggle sidebar on the right if it's not already, and find the section marked \"Output\". Open the `/kaggle/working` folder, and you'll see `model.pkl`. Click on it, then click on the menu on the right that appears, and choose \"Download\". After a few seconds, your model will be downloaded to your computer, where you can then create your app that uses the model.","metadata":{"id":"Q2HTrQKTf3BV"}}]}
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "1c9017c4",
+   "metadata": {
+    "id": "98d53c05",
+    "papermill": {
+     "duration": 0.014905,
+     "end_time": "2024-07-07T19:08:04.065598",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:04.050693",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Saving a Cats v Dogs Model"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "28bcc7bb",
+   "metadata": {
+    "papermill": {
+     "duration": 0.014184,
+     "end_time": "2024-07-07T19:08:04.094121",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:04.079937",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "This is a minimal example showing how to train a fastai model on Kaggle, and save it so you can use it in your app."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "edffd38a",
+   "metadata": {
+    "_kg_hide-input": true,
+    "_kg_hide-output": true,
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:08:04.123182Z",
+     "iopub.status.busy": "2024-07-07T19:08:04.122844Z",
+     "iopub.status.idle": "2024-07-07T19:08:25.862466Z",
+     "shell.execute_reply": "2024-07-07T19:08:25.861671Z"
+    },
+    "id": "evvA0fqvSblq",
+    "outputId": "ba21b811-767c-459a-ccdf-044758720a55",
+    "papermill": {
+     "duration": 21.757179,
+     "end_time": "2024-07-07T19:08:25.864956",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:04.107777",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[31mERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\r\n",
+      "tensorflow-io 0.21.0 requires tensorflow-io-gcs-filesystem==0.21.0, which is not installed.\r\n",
+      "tensorflow 2.6.3 requires absl-py~=0.10, but you have absl-py 1.0.0 which is incompatible.\r\n",
+      "tensorflow 2.6.3 requires numpy~=1.19.2, but you have numpy 1.21.6 which is incompatible.\r\n",
+      "tensorflow 2.6.3 requires six~=1.15.0, but you have six 1.16.0 which is incompatible.\r\n",
+      "tensorflow 2.6.3 requires wrapt~=1.12.1, but you have wrapt 1.14.0 which is incompatible.\r\n",
+      "tensorflow-transform 1.7.0 requires pyarrow<6,>=1, but you have pyarrow 7.0.0 which is incompatible.\r\n",
+      "tensorflow-transform 1.7.0 requires tensorflow!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,<2.9,>=1.15.5, but you have tensorflow 2.6.3 which is incompatible.\r\n",
+      "tensorflow-serving-api 2.8.0 requires tensorflow<3,>=2.8.0, but you have tensorflow 2.6.3 which is incompatible.\r\n",
+      "rich 12.2.0 requires typing-extensions<5.0,>=4.0.0; python_version < \"3.9\", but you have typing-extensions 3.10.0.2 which is incompatible.\r\n",
+      "pytorch-lightning 1.6.1 requires typing-extensions>=4.0.0, but you have typing-extensions 3.10.0.2 which is incompatible.\r\n",
+      "pytools 2022.1.5 requires typing-extensions>=4.0; python_version < \"3.11\", but you have typing-extensions 3.10.0.2 which is incompatible.\r\n",
+      "flake8 4.0.1 requires importlib-metadata<4.3; python_version < \"3.8\", but you have importlib-metadata 4.11.3 which is incompatible.\r\n",
+      "apache-beam 2.37.0 requires dill<0.3.2,>=0.3.1.1, but you have dill 0.3.4 which is incompatible.\r\n",
+      "apache-beam 2.37.0 requires httplib2<0.20.0,>=0.8, but you have httplib2 0.20.4 which is incompatible.\r\n",
+      "apache-beam 2.37.0 requires pyarrow<7.0.0,>=0.15.1, but you have pyarrow 7.0.0 which is incompatible.\r\n",
+      "aioitertools 0.10.0 requires typing_extensions>=4.0; python_version < \"3.10\", but you have typing-extensions 3.10.0.2 which is incompatible.\r\n",
+      "aiobotocore 2.2.0 requires botocore<1.24.22,>=1.24.21, but you have botocore 1.25.0 which is incompatible.\u001b[0m\u001b[31m\r\n",
+      "\u001b[0m"
+     ]
+    }
+   ],
+   "source": [
+    "# Make sure we've got the latest version of fastai:\n",
+    "!pip install -Uqq fastai"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eeb152c3",
+   "metadata": {
+    "papermill": {
+     "duration": 0.014059,
+     "end_time": "2024-07-07T19:08:25.894186",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:25.880127",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "First, import all the stuff we need from fastai:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "b4735a7b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:08:25.923953Z",
+     "iopub.status.busy": "2024-07-07T19:08:25.923668Z",
+     "iopub.status.idle": "2024-07-07T19:08:28.599733Z",
+     "shell.execute_reply": "2024-07-07T19:08:28.599214Z"
+    },
+    "id": "44eb0ad3",
+    "papermill": {
+     "duration": 2.693654,
+     "end_time": "2024-07-07T19:08:28.601926",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:25.908272",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from fastai.vision.all import *"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "66b4ef9d",
+   "metadata": {
+    "papermill": {
+     "duration": 0.013814,
+     "end_time": "2024-07-07T19:08:28.630291",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:28.616477",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Download and decompress our dataset, which is pictures of dogs and cats:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "1a923108",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:08:28.659525Z",
+     "iopub.status.busy": "2024-07-07T19:08:28.659266Z",
+     "iopub.status.idle": "2024-07-07T19:09:00.996506Z",
+     "shell.execute_reply": "2024-07-07T19:09:00.995854Z"
+    },
+    "papermill": {
+     "duration": 32.354411,
+     "end_time": "2024-07-07T19:09:00.998686",
+     "exception": false,
+     "start_time": "2024-07-07T19:08:28.644275",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "\n",
+       "<style>\n",
+       "    /* Turns off some styling */\n",
+       "    progress {\n",
+       "        /* gets rid of default border in Firefox and Opera. */\n",
+       "        border: none;\n",
+       "        /* Needs to be in here for Safari polyfill so background images work as expected. */\n",
+       "        background-size: auto;\n",
+       "    }\n",
+       "    .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {\n",
+       "        background: #F44336;\n",
+       "    }\n",
+       "</style>\n"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "text/html": [
+       "\n",
+       "    <div>\n",
+       "      <progress value='811712512' class='' max='811706944' style='width:300px; height:20px; vertical-align: middle;'></progress>\n",
+       "      100.00% [811712512/811706944 00:21<00:00]\n",
+       "    </div>\n",
+       "    "
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "path = untar_data(URLs.PETS)/'images'"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "87f943b1",
+   "metadata": {
+    "papermill": {
+     "duration": 0.017231,
+     "end_time": "2024-07-07T19:09:01.031888",
+     "exception": false,
+     "start_time": "2024-07-07T19:09:01.014657",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "We need a way to label our images as dogs or cats. In this dataset, pictures of cats are given a filename that starts with a capital letter:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "bbf11230",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:09:01.063703Z",
+     "iopub.status.busy": "2024-07-07T19:09:01.063482Z",
+     "iopub.status.idle": "2024-07-07T19:09:01.068318Z",
+     "shell.execute_reply": "2024-07-07T19:09:01.067731Z"
+    },
+    "id": "44eb0ad3",
+    "papermill": {
+     "duration": 0.022784,
+     "end_time": "2024-07-07T19:09:01.070025",
+     "exception": false,
+     "start_time": "2024-07-07T19:09:01.047241",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def is_cat(x): return x[0].isupper() "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e1dfb0cc",
+   "metadata": {
+    "papermill": {
+     "duration": 0.015249,
+     "end_time": "2024-07-07T19:09:01.100717",
+     "exception": false,
+     "start_time": "2024-07-07T19:09:01.085468",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Now we can create our `DataLoaders`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "6a956ee7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:09:01.132118Z",
+     "iopub.status.busy": "2024-07-07T19:09:01.131922Z",
+     "iopub.status.idle": "2024-07-07T19:09:04.754179Z",
+     "shell.execute_reply": "2024-07-07T19:09:04.753518Z"
+    },
+    "id": "44eb0ad3",
+    "papermill": {
+     "duration": 3.640668,
+     "end_time": "2024-07-07T19:09:04.756508",
+     "exception": false,
+     "start_time": "2024-07-07T19:09:01.115840",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "dls = ImageDataLoaders.from_name_func('.',\n",
+    "    get_image_files(path), valid_pct=0.2, seed=42,\n",
+    "    label_func=is_cat,\n",
+    "    item_tfms=Resize(192))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a306690a",
+   "metadata": {
+    "papermill": {
+     "duration": 0.015106,
+     "end_time": "2024-07-07T19:09:04.787265",
+     "exception": false,
+     "start_time": "2024-07-07T19:09:04.772159",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "... and train our model, a resnet18 (to keep it small and fast):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "43e453c3",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:09:04.819121Z",
+     "iopub.status.busy": "2024-07-07T19:09:04.818651Z",
+     "iopub.status.idle": "2024-07-07T19:10:55.625910Z",
+     "shell.execute_reply": "2024-07-07T19:10:55.625077Z"
+    },
+    "id": "c107f724",
+    "outputId": "fcc1de68-7c8b-43f5-b9eb-fcdb0773ef07",
+    "papermill": {
+     "duration": 110.825464,
+     "end_time": "2024-07-07T19:10:55.627970",
+     "exception": false,
+     "start_time": "2024-07-07T19:09:04.802506",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Downloading: \"https://download.pytorch.org/models/resnet18-f37072fd.pth\" to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "a39ec5078e704d63a10fcfc113f1f81b",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0.00/44.7M [00:00<?, ?B/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "text/html": [
+       "\n",
+       "<style>\n",
+       "    /* Turns off some styling */\n",
+       "    progress {\n",
+       "        /* gets rid of default border in Firefox and Opera. */\n",
+       "        border: none;\n",
+       "        /* Needs to be in here for Safari polyfill so background images work as expected. */\n",
+       "        background-size: auto;\n",
+       "    }\n",
+       "    .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {\n",
+       "        background: #F44336;\n",
+       "    }\n",
+       "</style>\n"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "text/html": [
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: left;\">\n",
+       "      <th>epoch</th>\n",
+       "      <th>train_loss</th>\n",
+       "      <th>valid_loss</th>\n",
+       "      <th>error_rate</th>\n",
+       "      <th>time</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <td>0</td>\n",
+       "      <td>0.193563</td>\n",
+       "      <td>0.061714</td>\n",
+       "      <td>0.017591</td>\n",
+       "      <td>00:32</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "text/html": [
+       "\n",
+       "<style>\n",
+       "    /* Turns off some styling */\n",
+       "    progress {\n",
+       "        /* gets rid of default border in Firefox and Opera. */\n",
+       "        border: none;\n",
+       "        /* Needs to be in here for Safari polyfill so background images work as expected. */\n",
+       "        background-size: auto;\n",
+       "    }\n",
+       "    .progress-bar-interrupted, .progress-bar-interrupted::-webkit-progress-bar {\n",
+       "        background: #F44336;\n",
+       "    }\n",
+       "</style>\n"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "text/html": [
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: left;\">\n",
+       "      <th>epoch</th>\n",
+       "      <th>train_loss</th>\n",
+       "      <th>valid_loss</th>\n",
+       "      <th>error_rate</th>\n",
+       "      <th>time</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <td>0</td>\n",
+       "      <td>0.072162</td>\n",
+       "      <td>0.029359</td>\n",
+       "      <td>0.008796</td>\n",
+       "      <td>00:26</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <td>1</td>\n",
+       "      <td>0.038498</td>\n",
+       "      <td>0.031627</td>\n",
+       "      <td>0.012179</td>\n",
+       "      <td>00:25</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <td>2</td>\n",
+       "      <td>0.020899</td>\n",
+       "      <td>0.024748</td>\n",
+       "      <td>0.007442</td>\n",
+       "      <td>00:26</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "learn = vision_learner(dls, resnet18, metrics=error_rate)\n",
+    "learn.fine_tune(3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a34d72f6",
+   "metadata": {
+    "papermill": {
+     "duration": 0.018641,
+     "end_time": "2024-07-07T19:10:55.666676",
+     "exception": false,
+     "start_time": "2024-07-07T19:10:55.648035",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Now we can export our trained `Learner`. This contains all the information needed to run the model:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "45414c00",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-07-07T19:10:55.706086Z",
+     "iopub.status.busy": "2024-07-07T19:10:55.705807Z",
+     "iopub.status.idle": "2024-07-07T19:10:55.839344Z",
+     "shell.execute_reply": "2024-07-07T19:10:55.838517Z"
+    },
+    "id": "ae2bc6ac",
+    "papermill": {
+     "duration": 0.156019,
+     "end_time": "2024-07-07T19:10:55.841708",
+     "exception": false,
+     "start_time": "2024-07-07T19:10:55.685689",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "learn.export('cat_dog_model.pkl')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ba989485",
+   "metadata": {
+    "id": "Q2HTrQKTf3BV",
+    "papermill": {
+     "duration": 0.019038,
+     "end_time": "2024-07-07T19:10:55.880166",
+     "exception": false,
+     "start_time": "2024-07-07T19:10:55.861128",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "Finally, open the Kaggle sidebar on the right if it's not already, and find the section marked \"Output\". Open the `/kaggle/working` folder, and you'll see `model.pkl`. Click on it, then click on the menu on the right that appears, and choose \"Download\". After a few seconds, your model will be downloaded to your computer, where you can then create your app that uses the model."
+   ]
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "gpu",
+   "dataSources": [],
+   "dockerImageVersionId": 30185,
+   "isGpuEnabled": true,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.12"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 182.221203,
+   "end_time": "2024-07-07T19:10:57.422321",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-07-07T19:07:55.201118",
+   "version": "2.3.4"
+  },
+  "widgets": {
+   "application/vnd.jupyter.widget-state+json": {
+    "state": {
+     "27c02b52393749fbb9b5d06fa7b11b43": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "ProgressStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "ProgressStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "StyleView",
+       "bar_color": null,
+       "description_width": ""
+      }
+     },
+     "28e672c8ee784e41a6b5f33f5956ff01": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "1.2.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "1.2.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "overflow_x": null,
+       "overflow_y": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "4f13359f0c8c403da3489c13b83ae684": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "1.2.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "1.2.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "overflow_x": null,
+       "overflow_y": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "65712b080d714c559cb9ce40ed74ecce": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "1.2.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "1.2.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "overflow_x": null,
+       "overflow_y": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "6900937dbaa348aca224c1f8729e92ad": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "FloatProgressModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "FloatProgressModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "1.5.0",
+       "_view_name": "ProgressView",
+       "bar_style": "success",
+       "description": "",
+       "description_tooltip": null,
+       "layout": "IPY_MODEL_65712b080d714c559cb9ce40ed74ecce",
+       "max": 46830571.0,
+       "min": 0.0,
+       "orientation": "horizontal",
+       "style": "IPY_MODEL_27c02b52393749fbb9b5d06fa7b11b43",
+       "value": 46830571.0
+      }
+     },
+     "7919d62402f747069a5a43452cfbe23c": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "1.2.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "1.2.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "overflow_x": null,
+       "overflow_y": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "7ae4b1ca318543c9a9aff56fadc52153": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "DescriptionStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "DescriptionStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "StyleView",
+       "description_width": ""
+      }
+     },
+     "a39ec5078e704d63a10fcfc113f1f81b": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "HBoxModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "HBoxModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "1.5.0",
+       "_view_name": "HBoxView",
+       "box_style": "",
+       "children": [
+        "IPY_MODEL_d480f21c57134c3ab71ea551d9c1ceb9",
+        "IPY_MODEL_6900937dbaa348aca224c1f8729e92ad",
+        "IPY_MODEL_af698902c0024a03a54184dbbea1b20b"
+       ],
+       "layout": "IPY_MODEL_4f13359f0c8c403da3489c13b83ae684"
+      }
+     },
+     "af698902c0024a03a54184dbbea1b20b": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "1.5.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_tooltip": null,
+       "layout": "IPY_MODEL_7919d62402f747069a5a43452cfbe23c",
+       "placeholder": "​",
+       "style": "IPY_MODEL_bfda048e9f0d4727a86568ab9c5162d9",
+       "value": " 44.7M/44.7M [00:00&lt;00:00, 206MB/s]"
+      }
+     },
+     "bfda048e9f0d4727a86568ab9c5162d9": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "DescriptionStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "DescriptionStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "1.2.0",
+       "_view_name": "StyleView",
+       "description_width": ""
+      }
+     },
+     "d480f21c57134c3ab71ea551d9c1ceb9": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "1.5.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "1.5.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "1.5.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_tooltip": null,
+       "layout": "IPY_MODEL_28e672c8ee784e41a6b5f33f5956ff01",
+       "placeholder": "​",
+       "style": "IPY_MODEL_7ae4b1ca318543c9a9aff56fadc52153",
+       "value": "100%"
+      }
+     }
+    },
+    "version_major": 2,
+    "version_minor": 0
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
